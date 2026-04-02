@@ -33,13 +33,13 @@ def format_check(fpdb,fref):
 	except Exception:
 		sys.stderr.write('ERROR: structure file format error <%s>\n'%fref)
 		print(Exception)
-		return False
+		return(False)
 	try:
 		struct=parser.get_structure('SI',fpdb)
 	except Exception:
 		sys.stderr.write('ERROR: structure file format error <%s>\n'%fpdb)
 		print(Exception)
-		return False
+		return(False)
 	atm_list=[]
 	for chn in struct_ref[0]:
 		for res in chn:
@@ -50,10 +50,10 @@ def format_check(fpdb,fref):
 		atm_map[atm]=i
 	
 	n_err=0
-	err_log=''
+	err_fp=None
 	if len(struct.child_list)<1:
 		open('%s.format_check.txt'%fpdb,'w').write("0 MODEL in the submission!")
-		return False
+		return(False)
 	for i,mdl in enumerate(struct.child_list):
 		if i >=5:break
 		flag=[False for x in range(len(atm_list))]
@@ -67,12 +67,17 @@ def format_check(fpdb,fref):
 		for j,fg in enumerate(flag):
 			if not fg:
 				n_err+=1
-				err_log+='ERROR: ATOM [%s] not found in model %d\n'%(atm_list[j],i)
+				if err_fp is None:
+					err_fp=open('%s.format_check.txt'%fpdb,'w')
+				err_fp.write('ERROR: ATOM [%s] not found in model %d\n'%(atm_list[j],i))
 	
 	if n_err >0:
-		open('%s.format_check.txt'%fpdb,'w').write(err_log)
-		return False
-	return True
+		if err_fp is not None:
+			err_fp.close()
+		return(False)
+	if err_fp is not None:
+		err_fp.close()
+	return(True)
 
 if __name__ == '__main__':
 	if format_check(sys.argv[1],sys.argv[2]):

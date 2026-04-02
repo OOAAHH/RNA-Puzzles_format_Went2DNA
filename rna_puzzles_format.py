@@ -3,201 +3,209 @@
 #===========================================================
 #Copyright(c)2013, IBMC, CNRS
 #All rights reserved.
-#NAME:		rnatemplate.py
-#ABSTRACT:	input a RNA sequence (fasta format), output the standard PDB format
-#DATE:		Tue Sep 17 15:08:40 2013
+#NAME:          rnatemplate.py
+#ABSTRACT:      input a RNA/DNA sequence (fasta format), output the standard PDB format
+#DATE:          Tue Sep 17 15:08:40 2013
 #Usage:
-#VERSION: 	0.01
-#AUTHOR: 	Miao Zhichao
-#CONTACT: 	chichaumiau AT gmail DOT com
+#VERSION:       0.02
+#AUTHOR:        Miao Zhichao
+#CONTACT:       chichaumiau AT gmail DOT com
 #NOTICE: This is free software and the source code is freely
 #available. You are free to redistribute or modify under the
 #conditions that (1) this notice is not removed or modified
 #in any way and (2) any modified versions of the program are
 #also available for free.
-#		** Absolutely no Warranty **
+#              ** Absolutely no Warranty **
 #===========================================================
-
 
 import sys
 
-Usage="""rnatemplate.py usage:
+Usage = """rnatemplate.py usage:
 
-input a RNA sequence (fasta format), output the standard PDB format
+input a RNA/DNA sequence (fasta format), output the standard PDB format
 
 ./rnatemplate.py fasta.file number_of_model(optional) >output.pdb
-fasta.file example:
->RNA1 A length1
+
+Header format:
+>name chain [DNA|RNA] [other optional fields]
+
+Examples:
+>RNA1 A RNA
 UGCGAUGAGAAGAAGAGUAUUAAGGAUUUACUAUGAUUAGCGACUCUAGGAUAGUGAAAG
      CUAGAGGAUAGUAACCUUAAGAAGGCACUUCGAGCA
->RNA2 B length2
-GCGGAAGUAGUUCAGUGGUAGAACACCACCUUGCCAAGGUGGGGGUCGCGGGUUCGAAUC
-     CCGUCUUCCGCUCCA
+>DNA1 B DNA
+ATCG
 """
 
-A_temp="""ATOM  %5d  P     A %c%4d       0.000   0.000   0.000  1.00  0.00           P
-ATOM  %5d  OP1   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  OP2   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  O5'   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C5'   A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C4'   A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O4'   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C3'   A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O3'   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C2'   A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2'   A %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C1'   A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N9    A %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C8    A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N7    A %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C5    A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C6    A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N6    A %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  N1    A %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C2    A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N3    A %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C4    A %c%4d       0.000   0.000   0.000  1.00  0.00           C
-"""
+RNA_RESIDUE_ATOMS = {
+    'A': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'", 'N9', 'C8', 'N7', 'C5', 'C6', 'N6', 'N1', 'C2', 'N3', 'C4' ],
+    'G': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'", 'N9', 'C8', 'N7', 'C5', 'C6', 'O6', 'N1', 'C2', 'N2', 'N3', 'C4' ],
+    'U': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'", 'N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C6' ],
+    'C': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'", 'N1', 'C2', 'O2', 'N3', 'C4', 'N4', 'C5', 'C6' ],
+}
 
-G_temp="""ATOM  %5d  P     G %c%4d       0.000   0.000   0.000  1.00  0.00           P
-ATOM  %5d  OP1   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  OP2   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  O5'   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C5'   G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C4'   G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O4'   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C3'   G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O3'   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C2'   G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2'   G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C1'   G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N9    G %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C8    G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N7    G %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C5    G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C6    G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O6    G %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  N1    G %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C2    G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N2    G %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  N3    G %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C4    G %c%4d       0.000   0.000   0.000  1.00  0.00           C
-"""
+DNA_RESIDUE_ATOMS = {
+    'A': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'", 'N9', 'C8', 'N7', 'C5', 'C6', 'N6', 'N1', 'C2', 'N3', 'C4' ],
+    'G': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'", 'N9', 'C8', 'N7', 'C5', 'C6', 'O6', 'N1', 'C2', 'N2', 'N3', 'C4' ],
+    'T': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'", 'N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6' ],
+    'C': [ 'P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'", 'N1', 'C2', 'O2', 'N3', 'C4', 'N4', 'C5', 'C6' ],
+}
 
-U_temp="""ATOM  %5d  P     U %c%4d       0.000   0.000   0.000  1.00  0.00           P
-ATOM  %5d  OP1   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  OP2   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  O5'   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C5'   U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C4'   U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O4'   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C3'   U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O3'   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C2'   U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2'   U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C1'   U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N1    U %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C2    U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2    U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  N3    U %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C4    U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O4    U %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C5    U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C6    U %c%4d       0.000   0.000   0.000  1.00  0.00           C
-"""
 
-C_temp="""ATOM  %5d  P     C %c%4d       0.000   0.000   0.000  1.00  0.00           P
-ATOM  %5d  OP1   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  OP2   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  O5'   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C5'   C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C4'   C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O4'   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C3'   C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O3'   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C2'   C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2'   C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  C1'   C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N1    C %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C2    C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  O2    C %c%4d       0.000   0.000   0.000  1.00  0.00           O
-ATOM  %5d  N3    C %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C4    C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  N4    C %c%4d       0.000   0.000   0.000  1.00  0.00           N
-ATOM  %5d  C5    C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-ATOM  %5d  C6    C %c%4d       0.000   0.000   0.000  1.00  0.00           C
-"""
+class TemplateInputError(Exception):
+    pass
 
-#=======================================================================
-#Read fasta file
-#Input: fasta file
-#format:
-#~ >name1 chain1 length1
-#~ sequence1
-#~ >name2 chain2 length2
-#~ sequence2
-#~ ........
+
+SUPPORTED_BASES = set('ACGTU')
+
+
+def parse_declared_polymer_type(header_fields):
+    for field in header_fields[2:]:
+        normalized = field.strip().upper().rstrip(':;,')
+        if normalized in ('DNA', 'RNA'):
+            return normalized
+        if normalized.startswith('TYPE=') or normalized.startswith('POLYMER='):
+            _, value = normalized.split('=', 1)
+            if value in ('DNA', 'RNA'):
+                return value
+    return None
+
+
 def readfasta(fp):
-	name='xxx'
-	chains=[]
-	seqs=[]
-	seq=''
-	f=open(fp)
-	for line in f:
-		if len(line)<2:continue
-		if line[0] == '#':continue
-		if line[0] == '>':
-			a=line.strip().split()
-			if( len(a) < 2 ):
-				print(Usage)
-				exit(0)
-			name=a[0][1:]
-			chains.append(a[1][0])
-			if len(seq)>0:
-				seqs.append(seq)
-			seq=''
-		else:
-			seq+=line.strip().upper()
-	seqs.append(seq)
-	return(chains,seqs)
+    chains = []
+    seqs = []
+    polymer_types = []
+    seq = ''
+    with open(fp) as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if len(line) < 1:
+                continue
+            if line[0] == '#':
+                continue
+            if line[0] == '>':
+                fields = line.split()
+                if len(fields) < 2:
+                    raise TemplateInputError('Invalid FASTA header: %s' % line)
+                if len(chains) > len(seqs):
+                    seqs.append(seq)
+                    seq = ''
+                chains.append(fields[1][0])
+                polymer_types.append(parse_declared_polymer_type(fields))
+                continue
+            if not chains:
+                raise TemplateInputError('Sequence data found before first FASTA header')
+            seq += line.upper()
+    if not chains:
+        raise TemplateInputError('No FASTA records found')
+    if len(chains) > len(seqs):
+        seqs.append(seq)
+    return chains, seqs, polymer_types
 
-def prepare_model(chains,seqs):
-	n=1#line number
-	temp_map={'A':A_temp,'U':U_temp,'C':C_temp,'G':G_temp,}
-	number_map={'A':22,'U':20,'C':20,'G':23,}
-	out=''
-	for chain,seq in zip(chains,seqs):
-		rsn=0# residue seq no
-		for k,i in enumerate(seq):
-			rsn+=1
-			xx=[]
-			for j in range(0,number_map.get(i,0)):
-				xx.append(n)
-				xx.append(chain)
-				xx.append(rsn)
-				n+=1
-			temp=temp_map.get(i,None)
-			if temp != None:
-				out+=temp%tuple(xx)
-		out+='TER   %5d        %c %c%4d                      \n'%(n,i,chain,rsn)
-		n+=1
-	return(out)
 
-def format_pdb(fp,num=5):
-	chains,seqs=readfasta(fp)
-	out=''
-	for i in range(num):
-		out+='MODEL       %2d                                              \n'%(i+1)
-		out+=prepare_model(chains,seqs)
-		out+='ENDMDL                                                      \n'
-	out+='END                                                        \n'
-	print (out,)
+def infer_polymer_type(seq, chain, declared_type=None):
+    invalid_bases = sorted(set(base for base in seq if base not in SUPPORTED_BASES))
+    if invalid_bases:
+        label = 'base' if len(invalid_bases) == 1 else 'bases'
+        raise TemplateInputError(
+            'Unsupported %s %s in chain %s'
+            % (label, ','.join(invalid_bases), chain)
+        )
+    has_t = ('T' in seq)
+    has_u = ('U' in seq)
+    if has_t and has_u:
+        raise TemplateInputError('Chain %s contains both T and U; cannot mix DNA and RNA bases in one chain' % chain)
+    if declared_type == 'DNA':
+        if has_u:
+            raise TemplateInputError('Chain %s is declared as DNA but contains U' % chain)
+        return 'DNA'
+    if declared_type == 'RNA':
+        if has_t:
+            raise TemplateInputError('Chain %s is declared as RNA but contains T' % chain)
+        return 'RNA'
+    if has_t:
+        return 'DNA'
+    if has_u:
+        return 'RNA'
+    raise TemplateInputError(
+        'Chain %s contains only A/C/G and is ambiguous; please declare DNA or RNA in the FASTA header, e.g. >name %s DNA'
+        % (chain, chain)
+    )
+
+
+def get_residue_atoms(base, polymer_type):
+    if polymer_type == 'DNA':
+        atoms = DNA_RESIDUE_ATOMS.get(base)
+    else:
+        atoms = RNA_RESIDUE_ATOMS.get(base)
+    if atoms is None:
+        raise TemplateInputError('Unsupported base %s for %s chain' % (base, polymer_type))
+    return atoms
+
+
+def get_residue_name(base, polymer_type):
+    if polymer_type == 'DNA':
+        return 'D%s' % base
+    return base
+
+
+def format_atom_field(atom_name):
+    if len(atom_name) >= 4:
+        return atom_name[:4]
+    return ' %-3s' % atom_name
+
+
+def format_atom_line(serial, atom_name, residue_name, chain, residue_seq):
+    element = atom_name[0]
+    return (
+        'ATOM  %5d %4s %3s %1s%4d       0.000   0.000   0.000  1.00  0.00           %1s\n'
+        % (serial, format_atom_field(atom_name), residue_name, chain, residue_seq, element)
+    )
+
+
+def format_ter_line(serial, residue_name, chain, residue_seq):
+    return 'TER   %5d      %3s %1s%4d                      \n' % (serial, residue_name, chain, residue_seq)
+
+
+def prepare_model(chains, seqs, declared_polymer_types):
+    serial = 1
+    output = ''
+    for chain, seq, declared_type in zip(chains, seqs, declared_polymer_types):
+        if not seq:
+            raise TemplateInputError('Chain %s has no sequence' % chain)
+        polymer_type = infer_polymer_type(seq, chain, declared_type)
+        residue_seq = 0
+        for base in seq:
+            residue_seq += 1
+            residue_name = get_residue_name(base, polymer_type)
+            for atom_name in get_residue_atoms(base, polymer_type):
+                output += format_atom_line(serial, atom_name, residue_name, chain, residue_seq)
+                serial += 1
+        output += format_ter_line(serial, residue_name, chain, residue_seq)
+        serial += 1
+    return output
+
+
+def format_pdb(fp, num=5):
+    chains, seqs, declared_polymer_types = readfasta(fp)
+    output = ''
+    for model_index in range(num):
+        output += 'MODEL       %2d                                              \n' % (model_index + 1)
+        output += prepare_model(chains, seqs, declared_polymer_types)
+        output += 'ENDMDL                                                      \n'
+    output += 'END                                                        \n'
+    sys.stdout.write(output + '\n')
+
 
 if __name__ == '__main__':
-	if( len(sys.argv) < 2 ):
-		print(Usage)
-		exit(0)
-	elif (len(sys.argv) > 2):
-		format_pdb(sys.argv[1],int(sys.argv[2]))
-	else:
-		format_pdb(sys.argv[1])
+    try:
+        if len(sys.argv) < 2:
+            sys.stdout.write(Usage)
+            sys.exit(0)
+        if len(sys.argv) > 2:
+            format_pdb(sys.argv[1], int(sys.argv[2]))
+        else:
+            format_pdb(sys.argv[1])
+    except TemplateInputError as error:
+        sys.stderr.write('ERROR: %s\n' % error)
+        sys.exit(1)
