@@ -51,8 +51,13 @@ Generate a reference template:
 
 ```bash
 python3 rna_puzzles_format.py example/2gdi.fa > out.pdb
+python3 rna_puzzles_format.py example/2gdi.fa 1 > out.pdb
 python3 rna_puzzles_format.py example/2gdi.fa 5 > out.pdb
+python3 rna_puzzles_format.py example/dna.fa 1 > dna.out.pdb
 ```
+
+The checked-in files under `example/` use `1` model to keep the repository
+compact. If you omit the second argument, the script still writes `5` models.
 
 Check a submitted structure:
 
@@ -62,8 +67,11 @@ python3 format_check.py example/2gdi.pdb example/2gdi.out.pdb
 
 ## Example files
 
-See the `example/` directory for a minimal FASTA/PDB/reference set:
+See the `example/` directory for RNA and DNA examples:
 
 - `example/2gdi.fa`
 - `example/2gdi.pdb`
 - `example/2gdi.out.pdb`
+- `example/2gdi.pdb.format_check.txt`
+- `example/dna.fa`
+- `example/dna.out.pdb`
